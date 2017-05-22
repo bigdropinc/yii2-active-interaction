@@ -1,0 +1,21 @@
+{
+    "name": "bigdropinc/yii2-active-interaction",
+    "description": "Manage business logic",
+    "type": "yii2-extension",
+    "keywords": ["yii2","extension","active","interaction","comand"],
+    "license": "BSD-3-Clause",
+    "authors": [
+        {
+            "name": "Vadim Trunov",
+            "email": "vadim.tr@bigdropinc.com"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "bigdropinc\\interactions\\": ""
+        }
+    }
+}
