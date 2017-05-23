@@ -209,7 +209,7 @@ abstract class ActiveInteraction extends Model
         return $result;
     }
 
-    protected function executeNested($attribute)
+    protected function executeNested($attribute, $params=[])
     {
         $result = null;
         if($nested = $this->_nested[$attribute]){
@@ -217,10 +217,12 @@ abstract class ActiveInteraction extends Model
                 $models = $this->$attribute;
                 $result = [];
                 foreach ($models as $model){
+                    $model->runPrepare($params);
                     $result[] = $model->internalExecute();
                 }
             } else {
                 $model = $this->$attribute;
+                $model->runPrepare($params);
                 $result = $model->internalExecute();
             }
         }
@@ -240,7 +242,7 @@ abstract class ActiveInteraction extends Model
                     $fieldsCount = count($data[$formName]);
                     $models = [];
                     for($i = 0; $i < $fieldsCount; $i++){
-                        $models[] = call_user_func([$nested['class'], 'create']);
+                        $models[] = Yii::createObject($nested['class']);
                     }
                     static::loadMultiple($models, $data, $formName);
                 }
@@ -278,7 +280,7 @@ abstract class ActiveInteraction extends Model
         foreach ($this->nested() as $nestedModel){
             $attribute = $nestedModel[0];
             $model = $nestedModel[1];
-            $object = call_user_func([$model, 'create'], []);
+            $object = Yii::createObject($model);
             if($nestedModel['relation'] == self::RELATION_HAS_MANY){
                 $object = [$object];
             }
