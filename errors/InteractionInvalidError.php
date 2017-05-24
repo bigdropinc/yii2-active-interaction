@@ -8,7 +8,6 @@
 
 namespace bigdropinc\interactions\errors;
 
-
 use Throwable;
 use yii\base\UserException;
 

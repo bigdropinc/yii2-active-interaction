@@ -1,4 +1,5 @@
 <?php
+
 namespace bigdropinc\interactions;
 
 use backend\interactions\errors\InteractionInvalidError;
@@ -46,7 +47,7 @@ abstract class ActiveInteraction extends Model
     public static final function run($params)
     {
         $config = [];
-        if(isset($params['config'])){
+        if (isset($params['config'])) {
             $config = $params['config'];
             unset($params['config']);
         }
@@ -67,7 +68,7 @@ abstract class ActiveInteraction extends Model
     public static final function forceRun($params, $config = [])
     {
         $interaction = static::run($params, $config);
-        if($interaction->hasErrors()){
+        if ($interaction->hasErrors()) {
             throw new InteractionInvalidError($interaction);
         }
         return $interaction;
@@ -86,12 +87,12 @@ abstract class ActiveInteraction extends Model
     public static final function create($config = [])
     {
         $params = [];
-        if(isset($config['params'])){
+        if (isset($config['params'])) {
             $params = $config['params'];
             unset($config['params']);
         }
 
-        if(!isset($config['waitForLoad'])){
+        if (!isset($config['waitForLoad'])) {
             $config['waitForLoad'] = true;
         }
         $config['class'] = static::class;
@@ -100,7 +101,7 @@ abstract class ActiveInteraction extends Model
          */
         $interaction = Yii::createObject($config);
 
-        if(!empty($params)){
+        if (!empty($params)) {
             $interaction->setAttributes($params);
         }
         $interaction->runPrepare($params);
@@ -117,7 +118,7 @@ abstract class ActiveInteraction extends Model
     protected function runPrepare($prepareParams)
     {
         $prepareMethodName = $this->getPrepareMethodName();
-        if(method_exists(static::className(), $prepareMethodName)){
+        if (method_exists(static::className(), $prepareMethodName)) {
             return call_user_func_array([$this, $prepareMethodName], $prepareParams);
         } else {
             return $this->prepare($prepareParams);
@@ -135,23 +136,42 @@ abstract class ActiveInteraction extends Model
      */
     public function runExecution($params)
     {
-        if($this->waitForLoad && empty($params)){
+        if ($this->waitForLoad && empty($params)) {
             return $this;
         }
 
         $this->load($params);
 
-        if($this->validate()){
+        if ($this->validate()) {
             $this->result = $this->internalExecute();
         };
 
         return $this;
     }
 
+    protected function createNested($attribute, $params, $additionalParamsForCreate)
+    {
+        $relation = null;
+        if ($nested = $this->_nested[$attribute]) {
+            if ($nested['relation'] == self::RELATION_HAS_MANY) {
+                $relation = [];
+                foreach ($params as $nestedData) {
+                    $paramsForCreate = array_merge($additionalParamsForCreate, [$nestedData]);
+                    $relation[] = call_user_func([$nested['class'], 'create'], [
+                        'params' => $paramsForCreate
+                    ]);
+                }
+            } else {
+                $relation = call_user_func([$nested['class'], $params]);
+            }
+        }
+        return $this->$attribute = $relation;
+    }
+
     protected function internalExecute()
     {
         $result = null;
-        if($this->beforeExecute() !== false){
+        if ($this->beforeExecute() !== false) {
 
             $result = $this->execute();
 
@@ -165,7 +185,7 @@ abstract class ActiveInteraction extends Model
     {
         $result = parent::validate($attributeNames, $clearErrors);
         $nestedResult = true;
-        if($result){
+        if ($result) {
             $nestedResult = $this->validateNested();
         }
 
@@ -175,8 +195,8 @@ abstract class ActiveInteraction extends Model
     protected function validateNested()
     {
         $result = true;
-        foreach ($this->_nested as $attribute => $nested){
-            if($nested['relation'] == self::RELATION_HAS_MANY){
+        foreach ($this->_nested as $attribute => $nested) {
+            if ($nested['relation'] == self::RELATION_HAS_MANY) {
                 $models = $this->$attribute;
                 $result = $result && static::validateMultiple($models);
             } else {
@@ -187,16 +207,15 @@ abstract class ActiveInteraction extends Model
         return $result;
     }
 
-
     public function load($data, $formName = null)
     {
-        if(($result = $this->beforeLoad()) !== false){
+        if (($result = $this->beforeLoad()) !== false) {
 
-            if(isset($data[0])){
-                $data = array_merge(array_shift($data), $data) ;
+            if (isset($data[0])) {
+                $data = array_merge(array_shift($data), $data);
             }
 
-            if(isset($data[$this->formName()])){
+            if (isset($data[$this->formName()])) {
                 $requestParams = $data[$this->formName()];
                 unset($data[$this->formName()]);
                 $data = array_merge($data, $requestParams);
@@ -212,11 +231,11 @@ abstract class ActiveInteraction extends Model
     protected function executeNested($attribute)
     {
         $result = null;
-        if($nested = $this->_nested[$attribute]){
-            if($nested['relation'] == self::RELATION_HAS_MANY){
+        if ($nested = $this->_nested[$attribute]) {
+            if ($nested['relation'] == self::RELATION_HAS_MANY) {
                 $models = $this->$attribute;
                 $result = [];
-                foreach ($models as $model){
+                foreach ($models as $model) {
                     $result[] = $model->internalExecute();
                 }
             } else {
@@ -229,17 +248,17 @@ abstract class ActiveInteraction extends Model
 
     protected function loadNested($data)
     {
-        foreach ($this->_nested as $attribute => $nested){
+        foreach ($this->_nested as $attribute => $nested) {
 
-            if($nested['relation'] == self::RELATION_HAS_MANY){
+            if ($nested['relation'] == self::RELATION_HAS_MANY) {
                 $models = $this->$attribute;
                 $model = reset($models);
                 $formName = $model->formName();
 
-                if(isset($data[$formName])){
+                if (isset($data[$formName])) {
                     $fieldsCount = count($data[$formName]);
                     $models = [];
-                    for($i = 0; $i < $fieldsCount; $i++){
+                    for ($i = 0; $i < $fieldsCount; $i++) {
                         $models[] = call_user_func([$nested['class'], 'create']);
                     }
                     static::loadMultiple($models, $data, $formName);
@@ -252,17 +271,14 @@ abstract class ActiveInteraction extends Model
         }
     }
 
-
-
     public function isExecuted()
     {
         return $this->executed && !$this->hasErrors();
     }
 
-
     public function attributes()
     {
-        return array_merge( array_keys($this->_attributes), parent::attributes() );
+        return array_merge(array_keys($this->_attributes), parent::attributes());
     }
 
     public function init()
@@ -275,11 +291,11 @@ abstract class ActiveInteraction extends Model
     protected function getNestedModels()
     {
         $nested = [];
-        foreach ($this->nested() as $nestedModel){
+        foreach ($this->nested() as $nestedModel) {
             $attribute = $nestedModel[0];
             $model = $nestedModel[1];
             $object = call_user_func([$model, 'create'], []);
-            if($nestedModel['relation'] == self::RELATION_HAS_MANY){
+            if ($nestedModel['relation'] == self::RELATION_HAS_MANY) {
                 $object = [$object];
             }
             $nested[$attribute] = $object;
@@ -293,7 +309,7 @@ abstract class ActiveInteraction extends Model
 
     public function __get($name)
     {
-        if(array_key_exists($name, $this->_attributes)){
+        if (array_key_exists($name, $this->_attributes)) {
             return $this->_attributes[$name];
         }
         return parent::__get($name);
@@ -301,7 +317,7 @@ abstract class ActiveInteraction extends Model
 
     public function __set($name, $value)
     {
-        if(isset($this->_attributes) && array_key_exists($name, $this->_attributes)){
+        if (isset($this->_attributes) && array_key_exists($name, $this->_attributes)) {
             return $this->_attributes[$name] = $value;
         }
         return parent::__set($name, $value);
@@ -316,13 +332,13 @@ abstract class ActiveInteraction extends Model
     protected function parseRules($rules)
     {
         $attributes = [];
-        foreach ($rules as $rule){
+        foreach ($rules as $rule) {
             $attr = reset($rule);
-            if(!is_array($attr)){
+            if (!is_array($attr)) {
                 $attr = [$attr => null];
             } else {
                 $parsedAttributes = [];
-                foreach ($attr as $attrName){
+                foreach ($attr as $attrName) {
                     $parsedAttributes[$attrName] = null;
                 }
                 $attr = $parsedAttributes;
@@ -333,10 +349,9 @@ abstract class ActiveInteraction extends Model
         return $attributes;
     }
 
-
     protected function getPrepareMethodName()
     {
-        return 'prepareFor'.StringHelper::basename(static::className());
+        return 'prepareFor' . StringHelper::basename(static::className());
 
     }
 

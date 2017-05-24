@@ -18,7 +18,7 @@ class ObjectValidator extends Validator
 
     public function validateAttribute($model, $attribute)
     {
-        if(!($model->$attribute instanceof $this->instanceOf)){
+        if (!($model->$attribute instanceof $this->instanceOf)) {
             $this->addError($model, $attribute, 'test');
         }
     }
