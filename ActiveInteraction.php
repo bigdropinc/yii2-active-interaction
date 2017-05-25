@@ -22,10 +22,12 @@ abstract class ActiveInteraction extends Model
     const EVENT_AFTER_LOAD = 'afterLoad';
     const EVENT_BEFORE_EXECUTE = 'beforeExecute';
     const EVENT_AFTER_EXECUTE = 'afterExecute';
+    const EVENT_ON_SUCCESS = 'onSuccess';
+    const EVENT_ON_ERRORS = 'onErrors';
 
     public $waitForLoad;
 
-    protected $result, $executed = false, $_nested = [];
+    protected $result, $_nested = [], $nestedValid = true;
 
     protected $_attributes;
 
@@ -175,21 +177,10 @@ abstract class ActiveInteraction extends Model
 
             $result = $this->execute();
 
-            $this->executed = true;
             $this->afterExecute();
+            $this->isSuccess() ? $this->onSuccess() : $this->onErrors();
         };
         return $result;
-    }
-
-    public function validate($attributeNames = null, $clearErrors = true)
-    {
-        $result = parent::validate($attributeNames, $clearErrors);
-        $nestedResult = true;
-        if ($result) {
-            $nestedResult = $this->validateNested();
-        }
-
-        return $result && $nestedResult;
     }
 
     protected function validateNested()
@@ -206,7 +197,6 @@ abstract class ActiveInteraction extends Model
         }
         return $result;
     }
-
 
     public function load($data, $formName = null)
     {
@@ -238,12 +228,18 @@ abstract class ActiveInteraction extends Model
                 $result = [];
                 foreach ($models as $model) {
                     $model->runPrepare($params);
-                    $result[] = $model->internalExecute();
+                    if ($model->validate()) {
+                        $result[] = $model->internalExecute();
+                    } else {
+                        $this->nestedValid = false;
+                    }
                 }
             } else {
                 $model = $this->$attribute;
                 $model->runPrepare($params);
-                $result = $model->internalExecute();
+                if ($this->nestedValid = $this->validate()) {
+                    $result = $model->internalExecute();
+                }
             }
         }
         return $result;
@@ -275,9 +271,9 @@ abstract class ActiveInteraction extends Model
     }
 
 
-    public function isExecuted()
+    public function isSuccess()
     {
-        return $this->executed && !$this->hasErrors();
+        return !$this->hasErrors() && $this->nestedValid;
     }
 
 
@@ -389,6 +385,16 @@ abstract class ActiveInteraction extends Model
     protected function afterLoad()
     {
         $this->trigger(static::EVENT_AFTER_LOAD);
+    }
+
+    protected function onSuccess()
+    {
+        $this->trigger(static::EVENT_ON_SUCCESS);
+    }
+
+    protected function onErrors()
+    {
+        $this->trigger(static::EVENT_ON_ERRORS);
     }
 
     protected function prepare($params)
