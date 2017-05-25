@@ -2,8 +2,7 @@
 
 namespace bigdropinc\interactions;
 
-use backend\interactions\errors\InteractionInvalidError;
-use bigdropinc\take\exceptions\RecordInvalidException;
+use bigdropinc\interactions\errors\InteractionInvalidError;
 use Yii;
 use yii\base\Model;
 use yii\helpers\StringHelper;
