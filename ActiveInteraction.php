@@ -26,7 +26,7 @@ abstract class ActiveInteraction extends Model
 
     public $waitForLoad;
 
-    protected $result, $_nested = [], $nestedValid = true;
+    protected $result, $_nested = [], $nestedValid = true, $executed = false;
 
     protected $_attributes;
 
@@ -82,15 +82,15 @@ abstract class ActiveInteraction extends Model
      * Config will use to create object using DI
      * Config may contain a params field. It will be passed to a prepare method
      *
-     * @param array $config
+     * @param array $params
      * @return ActiveInteraction
      */
-    public static final function create($config = [])
+    public static final function create($params = [])
     {
-        $params = [];
-        if (isset($config['params'])) {
-            $params = $config['params'];
-            unset($config['params']);
+        $config = [];
+        if (isset($params['config'])) {
+            $config = $params['config'];
+            unset($params['config']);
         }
 
         if (!isset($config['waitForLoad'])) {
@@ -118,9 +118,7 @@ abstract class ActiveInteraction extends Model
                 $relation = [];
                 foreach ($params as $nestedData) {
                     $paramsForCreate = array_merge($additionalParamsForCreate, [$nestedData]);
-                    $relation[] = call_user_func([$nested['class'], 'create'], [
-                        'params' => $paramsForCreate
-                    ]);
+                    $relation[] = call_user_func([$nested['class'], 'create'], $paramsForCreate);
                 }
             } else {
                 $relation = call_user_func([$nested['class'], $params]);
@@ -175,7 +173,7 @@ abstract class ActiveInteraction extends Model
         if ($this->beforeExecute() !== false) {
 
             $result = $this->execute();
-
+            $this->executed = true;
             $this->afterExecute();
             $this->isSuccess() ? $this->onSuccess() : $this->onErrors();
         };
@@ -272,7 +270,7 @@ abstract class ActiveInteraction extends Model
 
     public function isSuccess()
     {
-        return !$this->hasErrors() && $this->nestedValid;
+        return !$this->hasErrors() && $this->nestedValid && $this->executed;
     }
 
 
