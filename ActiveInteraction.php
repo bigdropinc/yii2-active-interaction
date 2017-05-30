@@ -3,6 +3,7 @@
 namespace bigdropinc\interactions;
 
 use bigdropinc\interactions\errors\InteractionInvalidError;
+use ReflectionMethod;
 use Yii;
 use yii\base\Model;
 use yii\helpers\StringHelper;
@@ -85,27 +86,25 @@ abstract class ActiveInteraction extends Model
      * @param array $params
      * @return ActiveInteraction
      */
-    public static final function create($params = [])
+    public static final function create($config = [])
     {
-        $config = [];
-        if (isset($params['config'])) {
-            $config = $params['config'];
-            unset($params['config']);
-        }
-
         if (!isset($config['waitForLoad'])) {
             $config['waitForLoad'] = true;
         }
         $config['class'] = static::class;
+
+        $prepareMethodName = static::getPrepareMethodName();
+        $prepareParams = [];
+        if (method_exists(static::className(), $prepareMethodName)) {
+            list($prepareParams, $config) = static::extractPrepareParams($prepareMethodName, $config);
+        }
+
         /**
          * @var $interaction ActiveInteraction
          */
         $interaction = Yii::createObject($config);
 
-        if (!empty($params)) {
-            $interaction->setAttributes($params);
-        }
-        $interaction->runPrepare($params);
+        $interaction->runPrepare(array_values($prepareParams), $prepareMethodName);
 
         return $interaction;
     }
@@ -133,14 +132,21 @@ abstract class ActiveInteraction extends Model
      * @param $prepareParams
      * @return bool|mixed
      */
-    protected function runPrepare($prepareParams)
+    protected function runPrepare($params, $method = 'prepare')
     {
-        $prepareMethodName = $this->getPrepareMethodName();
-        if (method_exists(static::className(), $prepareMethodName)) {
-            return call_user_func_array([$this, $prepareMethodName], $prepareParams);
-        } else {
-            return $this->prepare($prepareParams);
+        return call_user_func_array([$this, $method], $params);
+    }
+
+    protected static function extractPrepareParams($methodName, $prepareParams)
+    {
+        $r = new ReflectionMethod(static::className(), $methodName);
+        $params = $r->getParameters();
+        $methodParams = [];
+        foreach ($params as $param) {
+            $methodParams[$param->getName()] = $prepareParams[$param->getName()];
+            unset($prepareParams[$param->getName()]);
         }
+        return [$methodParams, $prepareParams];
     }
 
     /**
@@ -348,7 +354,7 @@ abstract class ActiveInteraction extends Model
     }
 
 
-    protected function getPrepareMethodName()
+    protected static function getPrepareMethodName()
     {
         return 'prepareFor' . StringHelper::basename(static::className());
 
