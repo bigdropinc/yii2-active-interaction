@@ -109,14 +109,14 @@ abstract class ActiveInteraction extends Model
         return $interaction;
     }
 
-    protected function createNested($attribute, $params, $additionalParamsForCreate = [])
+    protected function createNested($attribute, $params, $nestedAttribute, $additionalParamsForCreate = [])
     {
         $relation = null;
         if ($nested = $this->_nested[$attribute]) {
             if ($nested['relation'] == self::RELATION_HAS_MANY) {
                 $relation = [];
                 foreach ($params as $nestedData) {
-                    $paramsForCreate = array_merge($additionalParamsForCreate, [$nestedData]);
+                    $paramsForCreate = array_merge($additionalParamsForCreate, [$nestedAttribute => $nestedData]);
                     $relation[] = call_user_func([$nested['class'], 'create'], $paramsForCreate);
                 }
             } else {
@@ -130,11 +130,12 @@ abstract class ActiveInteraction extends Model
      * This method will run on object initialize. It try to find a "prepareMethod" and if not simply run prepare()
      *
      * @param $prepareParams
-     * @return bool|mixed
      */
     protected function runPrepare($params, $method = 'prepare')
     {
-        return call_user_func_array([$this, $method], $params);
+        if(method_exists($this, $method)){
+            call_user_func_array([$this, $method], $params);
+        }
     }
 
     protected static function extractPrepareParams($methodName, $prepareParams)
@@ -143,8 +144,11 @@ abstract class ActiveInteraction extends Model
         $params = $r->getParameters();
         $methodParams = [];
         foreach ($params as $param) {
-            $methodParams[$param->getName()] = $prepareParams[$param->getName()];
-            unset($prepareParams[$param->getName()]);
+            $name = $param->getName();
+            if(isset($prepareParams[$name])){
+                $methodParams[$param->getName()] = $prepareParams[$name];
+                unset($prepareParams[$param->getName()]);
+            }
         }
         return [$methodParams, $prepareParams];
     }
