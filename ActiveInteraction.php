@@ -31,6 +31,8 @@ abstract class ActiveInteraction extends Model
 
     protected $_attributes;
 
+    private $interactionData;
+
     /**
      * Realisation of your business logic
      *
@@ -126,13 +128,21 @@ abstract class ActiveInteraction extends Model
         return $this->$attribute = $relation;
     }
 
+//    protected function getNestedModel($class, )
+
     /**
      * This method will run on object initialize. It try to find a "prepareMethod" and if not simply run prepare()
      *
      * @param $prepareParams
      */
-    protected function runPrepare($params, $method = 'prepare')
+    protected function runPrepare($params, $method = null)
     {
+        if(is_null($method)){
+            $method = static::getPrepareMethodName();
+            if(!method_exists($this, $method)){
+                $method = 'prepare';
+            }
+        }
         if(method_exists($this, $method)){
             call_user_func_array([$this, $method], $params);
         }
@@ -235,6 +245,12 @@ abstract class ActiveInteraction extends Model
                 $result = [];
                 foreach ($models as $model) {
                     $model->runPrepare($params);
+
+                }
+
+                static::loadMultiple($models, $this->interactionData);
+
+                foreach ($models as $model){
                     if ($model->validate()) {
                         $result[] = $model->internalExecute();
                     } else {
@@ -254,6 +270,7 @@ abstract class ActiveInteraction extends Model
 
     protected function loadNested($data)
     {
+        $this->interactionData = $data;
         foreach ($this->_nested as $attribute => $nested) {
 
             if ($nested['relation'] == self::RELATION_HAS_MANY) {
