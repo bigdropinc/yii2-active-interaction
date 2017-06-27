@@ -21,7 +21,7 @@ abstract class ActiveInteractionBase extends Model implements InteractionEventsI
 
     public $waitForLoad;
 
-    protected $result, $executed = false, $_attributes;
+    protected $result, $executed = false, $_attributes, $isPrepareWasRun = false;
 
     final public function __construct(array $config = [])
     {
@@ -36,7 +36,7 @@ abstract class ActiveInteractionBase extends Model implements InteractionEventsI
      * @param $params
      * @return $this
      */
-    function __invoke($params)
+    function __invoke($params = [])
     {
         $this->runPrepare($params);
 
@@ -50,6 +50,10 @@ abstract class ActiveInteractionBase extends Model implements InteractionEventsI
      */
     protected function runPrepare($params, $method = null)
     {
+        if($this->isPrepareWasRun){
+            return false;
+        }
+
         if (is_null($method)) {
             $method = static::getPrepareMethodName();
             if (!method_exists($this, $method)) {
@@ -60,6 +64,8 @@ abstract class ActiveInteractionBase extends Model implements InteractionEventsI
         if (method_exists($this, $method)) {
             call_user_func_array([$this, $method], $params);
         }
+
+        return $this->isPrepareWasRun = true;
     }
 
     protected static function getPrepareMethodName()
@@ -91,6 +97,8 @@ abstract class ActiveInteractionBase extends Model implements InteractionEventsI
         if ($this->waitForLoad && empty($params)) {
             return $this;
         }
+
+        $this->runPrepare([]);
 
         $this->load($params);
 
