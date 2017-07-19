@@ -19,18 +19,9 @@ abstract class ActiveInteractionBase extends Model implements InteractionEventsI
 
     use InteractionEventsTrait;
 
-    public $waitForLoad;
+    public $waitForRunParams = true;
 
     protected $result, $executed = false, $_attributes, $isPrepareWasRun = false;
-
-    final public function __construct(array $config = [])
-    {
-        if (!isset($config['waitForLoad'])) {
-            $config['waitForLoad'] = true;
-        }
-
-        parent::__construct($config);
-    }
 
     /**
      * @param $params
@@ -94,7 +85,7 @@ abstract class ActiveInteractionBase extends Model implements InteractionEventsI
      */
     public function run($params)
     {
-        if ($this->waitForLoad && empty($params)) {
+        if ($this->waitForRunParams && empty($params)) {
             return $this;
         }
 
@@ -161,7 +152,7 @@ abstract class ActiveInteractionBase extends Model implements InteractionEventsI
 
     public function attributes()
     {
-        return array_merge(array_keys($this->_attributes), parent::attributes());
+        return array_keys($this->_attributes);
     }
 
     public function init()
