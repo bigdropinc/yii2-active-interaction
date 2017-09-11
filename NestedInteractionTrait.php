@@ -124,7 +124,7 @@ trait NestedInteractionTrait
             } else {
                 $model = $this->$attribute;
                 $model->runPrepare($params);
-                if ($this->nestedValid = $this->validate()) {
+                if ($this->nestedValid = $model->validate()) {
                     $result = $model->internalExecute();
                 }
             }
