@@ -190,11 +190,20 @@ abstract class ActiveInteractionBase extends Model implements InteractionEventsI
         }
         return $attributes;
     }
-
-    public function __get($name)
+    
+    public function __isset($name)
     {
         if (array_key_exists($name, $this->_attributes)) {
-            return $this->_attributes[$name];
+            return isset($this->_attributes[$name]);
+        }
+        return parent::__isset($name);
+    }
+
+    public function &__get($name)
+    {
+        if (array_key_exists($name, $this->_attributes)) {
+            $val = &$this->_attributes[$name];
+            return $val;
         }
         return parent::__get($name);
     }
