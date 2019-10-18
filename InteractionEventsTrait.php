@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: vadim
- * Date: 18.06.17
- * Time: 19:28
- */
 
 namespace bigdropinc\interactions;
-
 
 trait InteractionEventsTrait
 {

@@ -28,6 +28,4 @@ abstract class ActiveInteraction extends ActiveInteractionBase implements Nested
         parent::initAttributes();
         $this->_attributes = array_merge($this->_attributes, $this->getNestedModels());
     }
-
-
 }

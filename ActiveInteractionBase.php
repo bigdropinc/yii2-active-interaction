@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: vadim
- * Date: 18.06.17
- * Time: 19:20
- */
 
 namespace bigdropinc\interactions;
 
@@ -21,13 +15,16 @@ abstract class ActiveInteractionBase extends Model implements InteractionEventsI
 
     public $waitForRunParams = true;
 
-    protected $result, $executed = false, $_attributes, $isPrepareWasRun = false;
+    protected $result;
+    protected $executed = false;
+    protected $_attributes;
+    protected $isPrepareWasRun = false;
 
     /**
      * @param $params
      * @return $this
      */
-    function __invoke($params = [])
+    public function __invoke($params = [])
     {
         $this->runPrepare($params);
 
@@ -37,11 +34,13 @@ abstract class ActiveInteractionBase extends Model implements InteractionEventsI
     /**
      * This method will run on object initialize. It try to find a "prepareMethod" and if not simply run prepare()
      *
-     * @param $prepareParams
+     * @param $params
+     * @param $method
+     * @return boolean
      */
     protected function runPrepare($params, $method = null)
     {
-        if($this->isPrepareWasRun){
+        if ($this->isPrepareWasRun) {
             return false;
         }
 
@@ -62,7 +61,6 @@ abstract class ActiveInteractionBase extends Model implements InteractionEventsI
     protected static function getPrepareMethodName()
     {
         return 'prepareFor' . StringHelper::basename(static::className());
-
     }
 
     public function forceRun($params)
@@ -102,21 +100,19 @@ abstract class ActiveInteractionBase extends Model implements InteractionEventsI
 
     public function load($data, $formName = null)
     {
-        if (($result = $this->beforeLoad()) !== false) {
-
-            if (isset($data[0])) {
-                $data = array_merge(array_shift($data), $data);
-            }
-
-            if (isset($data[$this->formName()])) {
-                $requestParams = $data[$this->formName()];
-                unset($data[$this->formName()]);
-                $data = array_merge($data, $requestParams);
-            }
-
-            $result = $this->loadInternal($data);
-            $this->afterLoad();
+        $this->beforeLoad();
+        if (isset($data[0])) {
+            $data = array_merge(array_shift($data), $data);
         }
+        $formName = $this->formName();
+        if (isset($data[$formName])) {
+            $requestParams = $data[$formName];
+            unset($data[$formName]);
+            $data = array_merge($data, $requestParams);
+        }
+
+        $result = $this->loadInternal($data);
+        $this->afterLoad();
         return $result;
     }
 
@@ -129,7 +125,6 @@ abstract class ActiveInteractionBase extends Model implements InteractionEventsI
     {
         $result = null;
         if ($this->beforeExecute() !== false) {
-
             $result = $this->execute();
             $this->executed = true;
             $this->afterExecute();
@@ -230,5 +225,4 @@ abstract class ActiveInteractionBase extends Model implements InteractionEventsI
     {
         return true;
     }
-
 }
