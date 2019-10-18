@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: bigdrop
- * Date: 17.05.17
- * Time: 12:56
- */
 
 namespace bigdropinc\interactions\errors;
 
@@ -17,6 +11,7 @@ class InteractionInvalidError extends UserException
 
     public function __construct($interaction, $message = "", $code = 0, Throwable $previous = null)
     {
+        $this->interaction = $interaction;
         parent::__construct($message, $code, $previous);
     }
 

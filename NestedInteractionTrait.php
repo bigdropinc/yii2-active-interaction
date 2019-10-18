@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: vadim
- * Date: 18.06.17
- * Time: 19:15
- */
 
 namespace bigdropinc\interactions;
-
 
 use Yii;
 
@@ -15,7 +8,8 @@ trait NestedInteractionTrait
 {
 
     protected $interactionData;
-    protected $_nested = [], $nestedValid = true;
+    protected $_nested = [];
+    protected $nestedValid = true;
 
     protected function getNestedModels()
     {
@@ -63,7 +57,6 @@ trait NestedInteractionTrait
     protected function loadNested($data)
     {
         foreach ($this->_nested as $attribute => $nested) {
-
             if ($nested['relation'] == self::RELATION_HAS_MANY) {
                 $models = $this->$attribute;
                 $model = reset($models);
@@ -131,5 +124,4 @@ trait NestedInteractionTrait
         }
         return $result;
     }
-
 }

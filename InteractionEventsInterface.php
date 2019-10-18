@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: vadim
- * Date: 18.06.17
- * Time: 19:27
- */
 
 namespace bigdropinc\interactions;
-
 
 interface InteractionEventsInterface
 {
@@ -17,5 +10,4 @@ interface InteractionEventsInterface
     const EVENT_AFTER_EXECUTE = 'afterExecute';
     const EVENT_ON_SUCCESS = 'onSuccess';
     const EVENT_ON_ERRORS = 'onErrors';
-
 }
